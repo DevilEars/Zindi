@@ -12,7 +12,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 # I kept all the data files in this directory, so this needs to be pre-pended
-# to any data file calls
 data_dir = "data"
 
 
@@ -28,8 +27,9 @@ data = pd.read_csv(data_dir + "/train.csv",
 # print(data.head())
 
 # dafuq? I get 549, not 544 like the notebook
-# perhaps they added missing data? 
-data['road_segment_id'].unique().shape
+# perhaps they added missing data? # to any data file calls
+
+#print(data['road_segment_id'].unique().shape)
 
 
 # Training data from 2017
@@ -98,3 +98,32 @@ test = pd.DataFrame({
 test.head()
 # I get 14 234, whereas the notebook gets 14 235. Once fewer accident I suppose?
 train.y.sum()
+
+
+
+# $$$ Feature engineering $$$
+train['datetime'] = pd.to_datetime(train['datetime'])
+train['day'] = train['datetime'].dt.weekday_name
+
+train['min'] = train['datetime'].dt.hour*60+train['datetime'].dt.minute
+train.head()
+
+# add locations to the segments
+#print(data[['longitude']])
+#print(('latitude' in data.columns))
+# These are both there.. but it can't find it... weird
+# let's try deep magic
+
+print(data.columns)
+#data_cols = ["EventId", "Occurrence Local Date Time", "Reporting Agency", "Cause",
+#             "Subcause", "Status", "longitude", "latitude", "road_segment_id"]
+#data = data.reindex(columns=data_cols)
+
+#data.columns = data.columns.to_series().apply(lambda x: x.strip())
+#print(data.groupby('road_segment_id').mean())
+    
+# getting a KeyError: "['longitude'] not in index"
+# despite the fact that it's there
+# dafuq?
+locations = data.groupby('road_segment_id').mean()[['longitude', 'latitude']]
+locations.head(2)
