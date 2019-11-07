@@ -16,9 +16,11 @@ sample_sub = pd.read_csv('data/SampleSubmission.csv')
 data = pd.read_csv('data/train.csv', 
                    parse_dates = ['Occurrence Local Date Time'])
 
-#There are null values for the reporting agency. Not sure how this is relevant
-#TODO Can also drop Status since it adds nothing
-data['Reporting Agency'].fillna('Camera', inplace=True)
+
+# This is pointless, so I'm deletin gthem
+del data['Reporting Agency']
+del data['Status']
+#data.pop('Reporting Agency')
 #print(data.isnull().any())
 
 #print(('latitude' in data.columns))
@@ -136,3 +138,18 @@ train = train[:locations.shape[0]]
 
 train = pd.merge(train, locations, left_on='segment_id', right_on='road_segment_id')
 train.head()
+
+
+
+#$$$ Now the fun part CREATE THE MODEL! $$$
+#!pip install catboost
+from catboost import CatBoostClassifier
+
+model = CatBoostClassifier(iterations=20, 
+                           loss_function='Logloss', 
+                           verbose=False) 
+
+x_cols = ['day', 'segment_id', 'min', 'longitude', 'latitude']
+cat_cols = ['day', 'segment_id']
+
+model.fit(train[x_cols], train['y'], cat_features=cat_cols)
