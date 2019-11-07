@@ -11,17 +11,13 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 
-# I kept all the data files in this directory, so this needs to be pre-pended
 sample_sub = pd.read_csv('data/SampleSubmission.csv')
-
-# need to print it since this isn't a fancy jupyter notebook
-#print(sample_sub.head())
 
 data = pd.read_csv('data/train.csv', 
                    parse_dates = ['Occurrence Local Date Time'])
-#print(data.isnull().any())
-#print(data['Reporting Agency'])
-#There are null values for the reporting agency. Not sure if this breaks anything
+
+#There are null values for the reporting agency. Not sure how this is relevant
+#TODO Can also drop Status since it adds nothing
 data['Reporting Agency'].fillna('Camera', inplace=True)
 #print(data.isnull().any())
 
@@ -119,24 +115,24 @@ train['min'] = train['datetime'].dt.hour*60+train['datetime'].dt.minute
 train.head()
 
 # add locations to the segments
-
-# These are both there.. but it can't find it... weird
-# let's try deep magic
-
-#data_cols = ["EventId", "Occurrence Local Date Time", "Reporting Agency", "Cause",
-#             "Subcause", "Status", "longitude", "latitude", "road_segment_id"]
-#data = data.reindex(columns=data_cols)
-
-#data.columns = data.columns.to_series().apply(lambda x: x.strip())
-#print(data.groupby('road_segment_id').mean())
     
+#locations = data.groupby('road_segment_id').mean()[['longitude', 'latitude']]
+#locations.head(2)
 # getting a KeyError: "['longitude'] not in index"
 # despite the fact that it's there
 # dafuq?
-# fuck knows but this fixes it
-
-# no mean, though
+# fuck knows but this fixes it. no mean, though
 locations = data[['road_segment_id','longitude','latitude']]
 locations.head(2)
 
+# clean up old kak
+data, local_test = 0,0
 
+#print(train.shape)
+train = train[:locations.shape[0]]
+#print(locations.shape[0])
+
+# Keep running out of memory.. shyte
+
+train = pd.merge(train, locations, left_on='segment_id', right_on='road_segment_id')
+train.head()
