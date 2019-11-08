@@ -17,27 +17,22 @@ data = pd.read_csv('data/train.csv',
                    parse_dates = ['Occurrence Local Date Time'])
 
 
-# This is pointless, so I'm deletin gthem
-del data['Reporting Agency']
-del data['Status']
-#data.pop('Reporting Agency')
-#print(data.isnull().any())
+# This is pointless, so I'm deleting them
+#del data['Reporting Agency']
+#del data['Status']
 
 #print(('latitude' in data.columns))
 #print(('longitude' in data.columns))
-#print(data['longitude'])
-#print(data['latitude'])
-#print(data['road_segment_id'])
 
 #print(data.colums)
 
 # so far so good
-# print(data.head())
+#print(data.head())
 
 # dafuq? I get 549, not 544 like the notebook
-# perhaps they added missing data? # to any data file calls
-
-#print(data['road_segment_id'].unique().shape)
+# this means that they removed the dodgy entries... there are exactly 5
+# thanks for telling me, assholes
+data['road_segment_id'].unique().shape
 
 
 # Training data from 2017
@@ -104,7 +99,6 @@ test = pd.DataFrame({
     'y':tr[sids].values.flatten()
 })
 test.head()
-# I get 14 234, whereas the notebook gets 14 235. Once fewer accident I suppose?
 train.y.sum()
 
 
@@ -118,32 +112,21 @@ train.head()
 
 # add locations to the segments
     
-#locations = data.groupby('road_segment_id').mean()[['longitude', 'latitude']]
-#locations.head(2)
-# getting a KeyError: "['longitude'] not in index"
-# despite the fact that it's there
-# dafuq?
-# fuck knows but this fixes it. no mean, though
-locations = data[['road_segment_id','longitude','latitude']]
+locations = data.groupby('road_segment_id').mean()[['longitude', 'latitude']]
 locations.head(2)
-
-# clean up old kak
-data, local_test = 0,0
-
-#print(train.shape)
-train = train[:locations.shape[0]]
-#print(locations.shape[0])
-
-# Keep running out of memory.. shyte
+# getting a KeyError: "['longitude'] not in index" -  this was due to dodgy entries
 
 train = pd.merge(train, locations, left_on='segment_id', right_on='road_segment_id')
 train.head()
 
 
+# clean up old kak
+data, local_test = 0,0
+
+
 
 #$$$ Now the fun part CREATE THE MODEL! $$$
-#!pip install catboost
-from catboost import CatBoostClassifier
+from catboost import CatBoostClassifier, Pool
 
 model = CatBoostClassifier(iterations=20, 
                            loss_function='Logloss', 
@@ -153,3 +136,18 @@ x_cols = ['day', 'segment_id', 'min', 'longitude', 'latitude']
 cat_cols = ['day', 'segment_id']
 
 model.fit(train[x_cols], train['y'], cat_features=cat_cols)
+
+#x_cols = ['day', 'segment_id', 'min', 'longitude', 'latitude']
+#train_data = train[['day', 'segment_id', 'min', 'longitude', 'latitude']]
+#train_labels = ['day', 'segment_id']
+#test_data = catboost_pool = Pool(train_data, train_labels)
+
+#
+#model = CatBoostClassifier(iterations=2,
+#                           depth=2,
+#                           learning_rate=0.03,
+#                           loss_function='Logloss', 
+#                           verbose=True) 
+#
+#
+#model.fit(train_data, train_labels, plot=True)
