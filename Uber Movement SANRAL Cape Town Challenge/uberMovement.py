@@ -21,14 +21,6 @@ data = pd.read_csv('data/train.csv',
 #del data['Reporting Agency']
 #del data['Status']
 
-#print(('latitude' in data.columns))
-#print(('longitude' in data.columns))
-
-#print(data.colums)
-
-# so far so good
-#print(data.head())
-
 # dafuq? I get 549, not 544 like the notebook
 # this means that they removed the dodgy entries... there are exactly 5
 # thanks for telling me, assholes
@@ -129,15 +121,15 @@ data, local_test = 0,0
 from catboost import CatBoostClassifier
 
 #
-#model = CatBoostClassifier(iterations=2,
-#                           depth=2,
-#                           learning_rate=0.03,
-#                           loss_function='Logloss', 
-#                           verbose=True) 
-#
-model = CatBoostClassifier(iterations=20, 
+model = CatBoostClassifier(iterations=23,
+                           depth=3,
+                           learning_rate=0.03,
                            loss_function='Logloss', 
                            verbose=False) 
+#
+#model = CatBoostClassifier(iterations=20, 
+#                           loss_function='Logloss', 
+#                           verbose=False) 
 
 x_cols = ['day', 'segment_id', 'min', 'longitude', 'latitude']
 cat_cols = ['day', 'segment_id']
@@ -170,8 +162,9 @@ f1_score(test['y'], model.predict(test[x_cols]))
 
 # Let's predict 1 even if the prob is just > 0.005
 test['pred'] = model.predict_proba(test[x_cols])[:,1]
+
 test['gt005'] = (test['pred']>0.005).astype(int)
-#test.head()
+test.head()
 
 f1_score(test['y'], test['gt005'])
 
@@ -179,6 +172,51 @@ f1_score(test['y'], test['gt005'])
 test['gt0005'] = (test['pred']>0.0005).astype(int)
 f1_score(test['y'], test['gt0005'])
 
-# Hmm. And a higher 1?
-test['gt05'] = (test['pred']>0.05).astype(int)
-f1_score(test['y'], test['gt05'])
+# And lower?!
+#test['gt00005'] = (test['pred']>0.00005).astype(int)
+#f1_score(test['y'], test['gt00005'])
+
+# Hmm. And a higher 1? More like high over 9000+
+#test['gt05'] = (test['pred']>0.05).astype(int)
+#f1_score(test['y'], test['gt05'])
+
+
+
+# $$$ Making a submission $$$
+# Make the dataframe - dates based on sample submission file
+dts = pd.date_range('2019-01-01 01:00:00',
+                    '2019-03-31 23:00:00',
+                    freq="1h")
+tr = pd.DataFrame({'datetime':dts})
+
+for sid in sids:
+    tr[str(sid)] = 0
+    
+ss = pd.DataFrame({
+    'datetime x segment_id':np.concatenate([[str(x) + " x " + str(c)  
+                                            for x in tr['datetime']for c in sids]]),
+    'datetime':np.concatenate([[str(x) for x in tr['datetime']for c in sids]]),
+    'segment_id':np.concatenate([[str(c) for x in tr['datetime']for c in sids]])
+})
+ss.head()
+
+# Add the extra features
+ss['datetime'] = pd.to_datetime(ss['datetime'])
+ss['day'] = ss['datetime'].dt.weekday_name
+ss['min'] = ss['datetime'].dt.hour*60+ss['datetime'].dt.minute
+ss = pd.merge(ss, locations, left_on='segment_id', right_on='road_segment_id', how='left')
+ss['prediction'] = 0.0000
+ss.head()
+
+# Make predictions
+ #model.predict_proba(test[x_cols])[:, 1]
+ss['prediction'] = model.predict_proba(ss[x_cols])[:, 1] 
+ss.head()
+
+# Changing to binary with our threshold
+ss['prediction'] = (ss['prediction']>0.0001).astype(int)
+ss.head()
+
+
+# Save to csv and submit
+ss[['datetime x segment_id', 'prediction']].to_csv('submission.csv', index=False)
