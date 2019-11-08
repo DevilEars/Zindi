@@ -9,7 +9,7 @@ Created on Wed Nov  6 16:23:17 2019
 
 import pandas as pd
 import numpy as np
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 sample_sub = pd.read_csv('data/SampleSubmission.csv')
 
@@ -28,8 +28,14 @@ data['road_segment_id'].unique().shape
 
 
 # Training data from 2017
+# Remember to train on all the data
+#train = data.loc[data['Occurrence Local Date Time'] < '2018-01-01']
+#train = train.loc[train['Occurrence Local Date Time'] >= '2017-01-01']
+
 train = data.loc[data['Occurrence Local Date Time'] < '2018-01-01']
-train = train.loc[train['Occurrence Local Date Time'] >= '2017-01-01']
+train = train.loc[train['Occurrence Local Date Time'] >= '1930-01-16']
+
+train = data.loc[data['Occurrence Local Date Time']]
 
 # Testing data from 2018
 local_test = data.loc[data['Occurrence Local Date Time'] < '2019-01-01']
@@ -112,7 +118,7 @@ train = pd.merge(train, locations, left_on='segment_id', right_on='road_segment_
 train.head()
 
 
-# clean up old kak
+# clean up
 data, local_test = 0,0
 
 
@@ -120,16 +126,11 @@ data, local_test = 0,0
 #$$$ Now the fun part CREATE THE MODEL! $$$
 from catboost import CatBoostClassifier
 
-#
 model = CatBoostClassifier(iterations=23,
-                           depth=3,
+                           depth=6,
                            learning_rate=0.03,
                            loss_function='Logloss', 
                            verbose=False) 
-#
-#model = CatBoostClassifier(iterations=20, 
-#                           loss_function='Logloss', 
-#                           verbose=False) 
 
 x_cols = ['day', 'segment_id', 'min', 'longitude', 'latitude']
 cat_cols = ['day', 'segment_id']
@@ -137,11 +138,19 @@ cat_cols = ['day', 'segment_id']
 model.fit(train[x_cols], train['y'], cat_features=cat_cols)
 
 
-
-
 # $$$ Score the model $$$
 from sklearn.metrics import log_loss
+from sklearn.metrics import f1_score
 
+'''
+$$$ Score the model $$$
+1. make predictions from themodel
+2. check if it's better than just 0s
+3. pre-process test data to match training data
+4. check log loss score
+5. check f1 score of predictions
+6. check what different thresholds do to f1 score
+'''
 log_loss(train['y'], model.predict_proba(train[x_cols])[:, 1])
 
 # Is this better than just 0s?
@@ -157,66 +166,65 @@ test = pd.merge(test, locations, left_on='segment_id', right_on='road_segment_id
 log_loss(test['y'], model.predict_proba(test[x_cols])[:, 1])
 
 # First, just using .predict
-from sklearn.metrics import f1_score
+
 f1_score(test['y'], model.predict(test[x_cols]))
 
 # Let's predict 1 even if the prob is just > 0.005
 test['pred'] = model.predict_proba(test[x_cols])[:,1]
 
-test['gt005'] = (test['pred']>0.005).astype(int)
-test.head()
+test['gt0m'] = (test['pred']> test['pred'].mean()).astype(int)
+f1_score(test['y'], test['gt0m']) # 0.0014542921105262002
 
-f1_score(test['y'], test['gt005'])
+# need to beat 0.014560843 - DONE
+# need to beat 0.04
 
-# What about an even lower threshold?
-test['gt0005'] = (test['pred']>0.0005).astype(int)
-f1_score(test['y'], test['gt0005'])
-
-# And lower?!
-#test['gt00005'] = (test['pred']>0.00005).astype(int)
-#f1_score(test['y'], test['gt00005'])
-
-# Hmm. And a higher 1? More like high over 9000+
-#test['gt05'] = (test['pred']>0.05).astype(int)
-#f1_score(test['y'], test['gt05'])
-
-
-
-# $$$ Making a submission $$$
-# Make the dataframe - dates based on sample submission file
-dts = pd.date_range('2019-01-01 01:00:00',
-                    '2019-03-31 23:00:00',
-                    freq="1h")
-tr = pd.DataFrame({'datetime':dts})
-
-for sid in sids:
-    tr[str(sid)] = 0
+def make_submission():
+    '''
+    $$$ Making a submission $$$
+    1. Make the data frame from the sample submisison file
+    2. Add extra features
+    3. Make predictions
+    4. Apply the threshold for predictions
+    5. Save to csv for submission
+    '''
+     
+    # Make the dataframe - dates based on sample submission file
+    dts = pd.date_range('2019-01-01 01:00:00',
+                        '2019-03-31 23:00:00',
+                        freq="1h")
+    tr = pd.DataFrame({'datetime':dts})
     
-ss = pd.DataFrame({
-    'datetime x segment_id':np.concatenate([[str(x) + " x " + str(c)  
-                                            for x in tr['datetime']for c in sids]]),
-    'datetime':np.concatenate([[str(x) for x in tr['datetime']for c in sids]]),
-    'segment_id':np.concatenate([[str(c) for x in tr['datetime']for c in sids]])
-})
-ss.head()
-
-# Add the extra features
-ss['datetime'] = pd.to_datetime(ss['datetime'])
-ss['day'] = ss['datetime'].dt.weekday_name
-ss['min'] = ss['datetime'].dt.hour*60+ss['datetime'].dt.minute
-ss = pd.merge(ss, locations, left_on='segment_id', right_on='road_segment_id', how='left')
-ss['prediction'] = 0.0000
-ss.head()
-
-# Make predictions
- #model.predict_proba(test[x_cols])[:, 1]
-ss['prediction'] = model.predict_proba(ss[x_cols])[:, 1] 
-ss.head()
-
-# Changing to binary with our threshold
-ss['prediction'] = (ss['prediction']>0.0001).astype(int)
-ss.head()
-
-
-# Save to csv and submit
-ss[['datetime x segment_id', 'prediction']].to_csv('submission.csv', index=False)
+    for sid in sids:
+        tr[str(sid)] = 0
+        
+    ss = pd.DataFrame({
+        'datetime x segment_id':np.concatenate([[str(x) + " x " + str(c)  
+                                                for x in tr['datetime']for c in sids]]),
+        'datetime':np.concatenate([[str(x) for x in tr['datetime']for c in sids]]),
+        'segment_id':np.concatenate([[str(c) for x in tr['datetime']for c in sids]])
+    })
+    ss.head()
+    
+    # Add the extra features
+    ss['datetime'] = pd.to_datetime(ss['datetime'])
+    ss['day'] = ss['datetime'].dt.weekday_name
+    ss['min'] = ss['datetime'].dt.hour*60+ss['datetime'].dt.minute
+    ss = pd.merge(ss, locations, left_on='segment_id', right_on='road_segment_id', how='left')
+    ss['prediction'] = 0.0
+    ss.head()
+    
+    # Make predictions
+     #model.predict_proba(test[x_cols])[:, 1]
+    ss['prediction'] = model.predict_proba(ss[x_cols])[:, 1] 
+    ss.head()
+    
+    # Changing to binary with our threshold
+    # Predictions greater than the mean work pretty well
+    ss['prediction'] = (ss['prediction']> ss['prediction'].mean()).astype(int)
+    ss.head()
+    
+    
+    # Save to csv and submit
+    ss[['datetime x segment_id', 'prediction']].to_csv('submission.csv', index=False)
+    
+#make_submission()
