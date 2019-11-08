@@ -126,8 +126,15 @@ data, local_test = 0,0
 
 
 #$$$ Now the fun part CREATE THE MODEL! $$$
-from catboost import CatBoostClassifier, Pool
+from catboost import CatBoostClassifier
 
+#
+#model = CatBoostClassifier(iterations=2,
+#                           depth=2,
+#                           learning_rate=0.03,
+#                           loss_function='Logloss', 
+#                           verbose=True) 
+#
 model = CatBoostClassifier(iterations=20, 
                            loss_function='Logloss', 
                            verbose=False) 
@@ -137,17 +144,41 @@ cat_cols = ['day', 'segment_id']
 
 model.fit(train[x_cols], train['y'], cat_features=cat_cols)
 
-#x_cols = ['day', 'segment_id', 'min', 'longitude', 'latitude']
-#train_data = train[['day', 'segment_id', 'min', 'longitude', 'latitude']]
-#train_labels = ['day', 'segment_id']
-#test_data = catboost_pool = Pool(train_data, train_labels)
 
-#
-#model = CatBoostClassifier(iterations=2,
-#                           depth=2,
-#                           learning_rate=0.03,
-#                           loss_function='Logloss', 
-#                           verbose=True) 
-#
-#
-#model.fit(train_data, train_labels, plot=True)
+
+
+# $$$ Score the model $$$
+from sklearn.metrics import log_loss
+
+log_loss(train['y'], model.predict_proba(train[x_cols])[:, 1])
+
+# Is this better than just 0s?
+log_loss(train['y'], [0 for y in train['y']])
+
+# Pre-process the test to match train
+test['datetime'] = pd.to_datetime(test['datetime'])
+test['day'] = test['datetime'].dt.weekday_name
+test['min'] = test['datetime'].dt.hour*60+test['datetime'].dt.minute
+test = pd.merge(test, locations, left_on='segment_id', right_on='road_segment_id')
+
+# The important score
+log_loss(test['y'], model.predict_proba(test[x_cols])[:, 1])
+
+# First, just using .predict
+from sklearn.metrics import f1_score
+f1_score(test['y'], model.predict(test[x_cols]))
+
+# Let's predict 1 even if the prob is just > 0.005
+test['pred'] = model.predict_proba(test[x_cols])[:,1]
+test['gt005'] = (test['pred']>0.005).astype(int)
+#test.head()
+
+f1_score(test['y'], test['gt005'])
+
+# What about an even lower threshold?
+test['gt0005'] = (test['pred']>0.0005).astype(int)
+f1_score(test['y'], test['gt0005'])
+
+# Hmm. And a higher 1?
+test['gt05'] = (test['pred']>0.05).astype(int)
+f1_score(test['y'], test['gt05'])
