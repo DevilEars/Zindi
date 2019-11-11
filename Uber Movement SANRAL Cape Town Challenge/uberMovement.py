@@ -17,29 +17,37 @@ data = pd.read_csv('data/train.csv',
                    parse_dates = ['Occurrence Local Date Time'])
 
 
+# $$$ Data Cleaning $$$
+
 # This is pointless, so I'm deleting them
-#del data['Reporting Agency']
-#del data['Status']
+del data['Reporting Agency']
+del data['Status']
 
-# dafuq? I get 549, not 544 like the notebook
-# this means that they removed the dodgy entries... there are exactly 5
-# thanks for telling me, assholes
+# Remove all the longitudes named 'Closed' 
+data = data[data.longitude != 'Closed']
 data['road_segment_id'].unique().shape
+# Change the dtype of longitudes to float
+#df['dates'] = df['dates'].apply(lambda x: str(x))
+data['longitude'] = data['longitude'].apply(lambda x:float(x))
+#data.info()
 
 
-# Training data from 2017
 # Remember to train on all the data
-#train = data.loc[data['Occurrence Local Date Time'] < '2018-01-01']
-#train = train.loc[train['Occurrence Local Date Time'] >= '2017-01-01']
+train_data_date_to = '2018-01-01'
+train_data_date_from = '2016-01-01'
+#train_data_date_from = '2017-01-01'
 
-train = data.loc[data['Occurrence Local Date Time'] < '2018-01-01']
-train = train.loc[train['Occurrence Local Date Time'] >= '1930-01-16']
-
-train = data.loc[data['Occurrence Local Date Time']]
+train = data.loc[data['Occurrence Local Date Time'] < train_data_date_to]
+train = train.loc[train['Occurrence Local Date Time'] >= train_data_date_from]
+#train.head()
 
 # Testing data from 2018
-local_test = data.loc[data['Occurrence Local Date Time'] < '2019-01-01']
-local_test = local_test.loc[local_test['Occurrence Local Date Time'] >= '2018-09-01']
+# Testing data from 2018
+testing_data_date_to = '2019-01-01'
+testing_data_date_from = '2018-01-01'
+local_test = data.loc[data['Occurrence Local Date Time'] < testing_data_date_to]
+local_test = local_test.loc[local_test['Occurrence Local Date Time'] >= testing_data_date_from]
+#local_test.head()
 
 
 
@@ -50,8 +58,8 @@ local_test = local_test.loc[local_test['Occurrence Local Date Time'] >= '2018-09
 
 sids = data['road_segment_id'].unique()
 
-dts = pd.date_range('2017-01-01',
-                    '2018-01-01',
+dts = pd.date_range(train_data_date_from,
+                    train_data_date_to,
                     freq="1h")
 tr = pd.DataFrame({'datetime':dts})
 
@@ -77,7 +85,7 @@ train.head()
 
 
 # Same for local test
-dts = pd.date_range('2018-09-01','2018-12-31',
+dts = pd.date_range(testing_data_date_from, testing_data_date_to,
                     freq="1h")
 tr = pd.DataFrame({'datetime':dts})
 
@@ -97,7 +105,7 @@ test = pd.DataFrame({
     'y':tr[sids].values.flatten()
 })
 test.head()
-train.y.sum()
+
 
 
     
@@ -166,17 +174,16 @@ test = pd.merge(test, locations, left_on='segment_id', right_on='road_segment_id
 log_loss(test['y'], model.predict_proba(test[x_cols])[:, 1])
 
 # First, just using .predict
-
 f1_score(test['y'], model.predict(test[x_cols]))
-
-# Let's predict 1 even if the prob is just > 0.005
+# Test predictions
 test['pred'] = model.predict_proba(test[x_cols])[:,1]
-
-test['gt0m'] = (test['pred']> test['pred'].mean()).astype(int)
-f1_score(test['y'], test['gt0m']) # 0.0014542921105262002
+# Predict a result if it's greater than the mean
+test['gtmean'] = (test['pred']> test['pred'].mean()).astype(int)
+f1_score(test['y'], test['gtmean']) # 0.0014542921105262002
 
 # need to beat 0.014560843 - DONE
-# need to beat 0.04
+# need to beat 0.04 - more training data? split test/train data better to yield
+# more testing data?
 
 def make_submission():
     '''
@@ -227,4 +234,4 @@ def make_submission():
     # Save to csv and submit
     ss[['datetime x segment_id', 'prediction']].to_csv('submission.csv', index=False)
     
-#make_submission()
+make_submission()
