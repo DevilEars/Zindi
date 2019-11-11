@@ -19,7 +19,7 @@ data = pd.read_csv('data/train.csv',
 
 # $$$ Data Cleaning $$$
 
-# This is pointless, so I'm deleting them
+# These are pointless, so I'm deleting them
 del data['Reporting Agency']
 del data['Status']
 
@@ -27,27 +27,20 @@ del data['Status']
 data = data[data.longitude != 'Closed']
 data['road_segment_id'].unique().shape
 # Change the dtype of longitudes to float
-#df['dates'] = df['dates'].apply(lambda x: str(x))
 data['longitude'] = data['longitude'].apply(lambda x:float(x))
-#data.info()
-
 
 # Remember to train on all the data
 train_data_date_to = '2018-01-01'
 train_data_date_from = '2016-01-01'
-#train_data_date_from = '2017-01-01'
 
 train = data.loc[data['Occurrence Local Date Time'] < train_data_date_to]
 train = train.loc[train['Occurrence Local Date Time'] >= train_data_date_from]
-#train.head()
 
-# Testing data from 2018
 # Testing data from 2018
 testing_data_date_to = '2019-01-01'
 testing_data_date_from = '2018-01-01'
 local_test = data.loc[data['Occurrence Local Date Time'] < testing_data_date_to]
 local_test = local_test.loc[local_test['Occurrence Local Date Time'] >= testing_data_date_from]
-#local_test.head()
 
 
 
@@ -72,7 +65,7 @@ for sid in sids:
 tr.head()
 
 # Reshape this as in sample submission
-# I add some extra columns that may be useful
+# Adding some extra columns that may be useful
 train = pd.DataFrame({
     'datetime x segment_id':np.concatenate([[str(x) + " x " + str(c) 
                                              for c in sids] 
@@ -84,7 +77,7 @@ train = pd.DataFrame({
 train.head()
 
 
-# Same for local test
+# Same for local test data
 dts = pd.date_range(testing_data_date_from, testing_data_date_to,
                     freq="1h")
 tr = pd.DataFrame({'datetime':dts})
@@ -108,7 +101,6 @@ test.head()
 
 
 
-    
 # $$$ Feature engineering $$$
 train['datetime'] = pd.to_datetime(train['datetime'])
 train['day'] = train['datetime'].dt.weekday_name
@@ -117,14 +109,11 @@ train['min'] = train['datetime'].dt.hour*60+train['datetime'].dt.minute
 train.head()
 
 # add locations to the segments
-    
 locations = data.groupby('road_segment_id').mean()[['longitude', 'latitude']]
-locations.head(2)
-# getting a KeyError: "['longitude'] not in index" -  this was due to dodgy entries
+locations.head()
 
 train = pd.merge(train, locations, left_on='segment_id', right_on='road_segment_id')
 train.head()
-
 
 # clean up
 data, local_test = 0,0
@@ -144,6 +133,7 @@ x_cols = ['day', 'segment_id', 'min', 'longitude', 'latitude']
 cat_cols = ['day', 'segment_id']
 
 model.fit(train[x_cols], train['y'], cat_features=cat_cols)
+
 
 
 # $$$ Score the model $$$
@@ -179,11 +169,12 @@ f1_score(test['y'], model.predict(test[x_cols]))
 test['pred'] = model.predict_proba(test[x_cols])[:,1]
 # Predict a result if it's greater than the mean
 test['gtmean'] = (test['pred']> test['pred'].mean()).astype(int)
-f1_score(test['y'], test['gtmean']) # 0.0014542921105262002
+f1_score(test['y'], test['gtmean']) # 0.0014542921105262002 on 2017 training data
+# 0.014212908381729193 on all the training data
 
 # need to beat 0.014560843 - DONE
-# need to beat 0.04 - more training data? split test/train data better to yield
-# more testing data?
+# need to beat 0.07 for top 10
+
 
 def make_submission():
     '''
@@ -234,4 +225,5 @@ def make_submission():
     # Save to csv and submit
     ss[['datetime x segment_id', 'prediction']].to_csv('submission.csv', index=False)
     
+
 make_submission()
