@@ -169,8 +169,8 @@ f1_score(test['y'], model.predict(test[x_cols]))
 test['pred'] = model.predict_proba(test[x_cols])[:,1]
 # Predict a result if it's greater than the mean
 test['gtmean'] = (test['pred']> test['pred'].mean()).astype(int)
-f1_score(test['y'], test['gtmean']) # 0.0014542921105262002 on 2017 training data
-# 0.014212908381729193 on all the training data
+f1_score(test['y'], test['gtmean']) # ~0.014543 on 2017 training data
+# ~0.014213 on all the training data
 
 # need to beat 0.014560843 - DONE
 # need to beat 0.07 for top 10
