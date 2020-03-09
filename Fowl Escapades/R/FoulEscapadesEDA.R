@@ -37,7 +37,6 @@ table(is.na(eda_samples))
 # I just used a single file for clarity and for saving space
 audio_file <- "./data/EDASamples/ds5B591U.mp3"
 
-
 # show some audio information with the av package
 av_media_info(audio_file)
 
@@ -47,6 +46,7 @@ plot(pcm_data, type = 'l')
 
 # look at some metrics, some EDA yay!
 dim(pcm_data)
+
 # minimum, .., Median, Mean, .. max. that sort of thing
 # this is all on amplitude samples of raw audio
 summary(pcm_data)
@@ -54,9 +54,11 @@ summary(pcm_data)
 # read 3 seconds of data and directly transform to time-frequency domain
 # get the spectrogram
 fft_data <- read_audio_fft(audio_file, end_time = 3.0)
+
 # look at some metrics
 dim(fft_data)
 str(fft_data)
+
 # plot
 plot(fft_data)
 
@@ -66,9 +68,11 @@ plot(fft_data)
 # I used a tukey window. You can play around with
 # the values, with 256 being a minimum window size
 tukey_filter_data <- read_audio_fft(audio_file, end_time = 3.0, tukey(512))
+
 # look at some metrics
 dim(tukey_filter_data)
 str(tukey_filter_data)
+
 #plot
 plot(tukey_filter_data)
 
