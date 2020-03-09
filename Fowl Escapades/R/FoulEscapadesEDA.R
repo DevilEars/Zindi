@@ -1,6 +1,7 @@
 # This is DevilEar's first contribution to the Zindi community! 
 
 # A blog post that accompanies this code: 
+# https://dev.to/devilears/zindi-fowl-escapades-challenge-eda-of-audio-data-in-r-ejj
 
 # install if needed
 #install.packages("av")
