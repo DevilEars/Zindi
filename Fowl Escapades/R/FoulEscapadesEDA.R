@@ -12,10 +12,7 @@ library(av)
 
 # $$$$$$ Load datasets $$$$$$
 
-# This dataset just contains a handful of samples
-# I have placed the samples in their own zip file
-# you need to download that file and extract it
-# to .data/EDASamples/ for any of this to work
+# This dataset is contrived, it doesn't do anything
 file_name <- "./csv/EDASamples.csv"
 eda_samples <- read.csv(file_name)
   
@@ -55,24 +52,26 @@ dim(pcm_data)
 summary(pcm_data)
 
 # read 3 seconds of data and directly transform to time-frequency domain
-# plot the spectrogram
+# get the spectrogram
 fft_data <- read_audio_fft(audio_file, end_time = 3.0)
-plot(fft_data)
-
 # look at some metrics
 dim(fft_data)
 str(fft_data)
+# plot
+plot(fft_data)
+
+
 
 
 
 # $$$$$$ Windows and filters $$$$$$
 # I used a tukey window. You can play around with
 # the values, with 256 being a minimum window size
-
 tukey_filter_data <- read_audio_fft(audio_file, end_time = 3.0, tukey(512))
 # look at some metrics
 dim(tukey_filter_data)
 str(tukey_filter_data)
+#plot
 plot(tukey_filter_data)
 
 
