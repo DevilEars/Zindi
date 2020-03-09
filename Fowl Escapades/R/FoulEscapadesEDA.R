@@ -62,8 +62,6 @@ plot(fft_data)
 
 
 
-
-
 # $$$$$$ Windows and filters $$$$$$
 # I used a tukey window. You can play around with
 # the values, with 256 being a minimum window size
