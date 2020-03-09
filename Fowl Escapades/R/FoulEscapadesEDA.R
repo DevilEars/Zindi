@@ -65,6 +65,7 @@ plot(fft_data)
 
 
 # $$$$$$ Windows and filters $$$$$$
+
 # I used a tukey window. You can play around with
 # the values, with 256 being a minimum window size
 tukey_filter_data <- read_audio_fft(audio_file, end_time = 3.0, tukey(512))
