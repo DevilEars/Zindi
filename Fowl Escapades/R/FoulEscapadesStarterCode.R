@@ -1,67 +1,54 @@
-# This is DevilEar's R starter code contribution to the Zindi community
-# Maybe. I mean I want to 
+# Before we begin, set the working directory because R is that lame
+#setwd("~/Python/GithubProjects/Zindi/Fowl Escapades/R")
 
-# A blog post to accompany this code:
+# Import datasets
 
-install.packages("tuneR")
-library(tuneR)
-library(signal)
+# Submission has a matrix of all the possible matches
+# You need to provide a probability between 0 and 1 for
+# the likelihood of a match
 
-# $$$$$$ Get the Data $$$$$$
-# the pdf manual for tuneR is very good
-# but this is even more hande https://hansenjohnson.org/post/spectrograms-in-r/
+# Eg a sample of an Afrian Rock Pipit should have 1 in that column 
+# and 0 in all the other columns
+submission = read.csv("./csv/SampleSubmission.csv")
+#str(submission)
 
-# mark this as the day on which I learnt that you can use = as the assignment operator in R 
-# instead of -> these annoying arrows all the time
-
-audio_file = "./data/EDASamples/ds5B591U.mp3"
-
-# this converts it to wav because MP3 is shyte
-content = readMP3(audio_file)
-
-# see if this yielded anything
-summary(content)
-
-# $$$$$$ Extract features from the Data $$$$$$
-
-# first, let's redo my EDA because tuneR is more powerful
-# and it also uses signal, so that's 2 birds and 1 stone and 2 girls and 1 cup
-
-# the Wave object is in stereo
-# we probably only need one channel for our models
-snd = content@right
-
-# plot the waveform. so sexy
-plot(snd, type='l', xlab='Samples', ylab='Amplitude')
-
-# plot the spectrogram. much better than the av package way!
-# may need to wrangle the samples a bit as this is huge
-specgram(snd, content@samp.rate)
-
-# extract the MFCC malfeasance
-# someone made this uber sexy since it already extracts only 1 channel - cha!
-# see https://cran.r-project.org/web/packages/tuneR/tuneR.pdf
-# Usage:
-#melfcc(samples, sr = samples@samp.rate, wintime = 0.025,
-#       hoptime = 0.01, numcep = 12, lifterexp = 0.6, htklifter = FALSE,
-#       sumpower = TRUE, preemph = 0.97, dither = FALSE,
-#       minfreq = 0, maxfreq = sr/2, nbands = 40, bwidth = 1,
-#       dcttype = c("t2", "t1", "t3", "t4"),
-#       fbtype = c("mel", "htkmel", "fcmel", "bark"), usecmp = FALSE,
-#       modelorder = NULL, spec_out = FALSE, frames_in_rows = TRUE)
-
-# don't do this. it needs 12 Gb. Ewps
-# mofo = melfcc(content, content@samp.rate, wintime=3.00)
-mofo = melfcc(content, content@samp.rate, wintime=0.03)
-summary(mofo)
-
-plot(mofo, type='l')
-
-# store the extracted features so I can just load this in future
-
-
-# $$$$$$ Convert features for model $$$$$$
+# This contains samples of each bird call
+train = read.csv("./csv/Train.csv")
+#str(train)
 
 
 
-# $$$$$$ The Model, thank you Kraftwerk $$$$$$
+# Prepare the files
+# get the column names from the submission to name my birds
+birds = colnames(submission)
+# Remove the 1st item which is 'ID' and I know that already
+birds = birds[-1]
+#str(birds)
+
+# Add file names to the dataframes
+# see how easy this is in python?
+# train['file_name'] = './data/Train/' + train['ID'] + '.mp3'
+# submission['file_name'] = './data/Test/' + submission['ID'] + 'mp3'
+
+# Although this is not strictly necessary, I just need to
+#process each file in those directories. Might as well do that in a loop
+
+
+
+# Extract something useful for our model
+
+
+
+# Fit classifier to Training set
+
+
+
+# Predict Test set results
+
+
+
+# Test model performance
+
+
+
+# Visualise results
