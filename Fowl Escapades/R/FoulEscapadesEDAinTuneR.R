@@ -41,8 +41,14 @@ plot(snd, type='l', xlab='Samples', ylab='Amplitude')
 
 # plot the spectrogram. much better than the av package way!
 # may need to wrangle the samples a bit as this is huge
-spec = specgram(content@right, content@samp.rate, window = hanning(512))
-plot(spec)
+#spec = specgram(content@right, content@samp.rate, window = hanning(512))
+#spec = specgram(content@right, n=512, Fs=content@samp.rate, window = hanning(512))
+
+step = trunc(5*content@samp.rate/1000)             # one spectral slice every 5 ms
+window = trunc(40*content@samp.rate/1000)          # 50 ms data window
+fftn = 2^ceiling(log2(abs(window))) # next highest power of 2
+spg = specgram(content@right, fftn, content@samp.rate, window, (window-step))
+plot(spg)
 
 # extract the MFCC malfeasance
 # someone made this uber sexy since it already extracts only 1 channel - cha!

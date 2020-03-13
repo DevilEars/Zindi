@@ -1,5 +1,5 @@
 # Before we begin, set the working directory because R is that lame
-#setwd("~/Python/GithubProjects/Zindi/Fowl Escapades/R")
+setwd("~/Python/GithubProjects/Zindi/Fowl Escapades/R")
 
 # Import datasets
 
@@ -26,9 +26,20 @@ birds = birds[-1]
 #str(birds)
 
 # Add file names to the dataframes
-# see how easy this is in python?
-# train['file_name'] = './data/Train/' + train['ID'] + '.mp3'
-# submission['file_name'] = './data/Test/' + submission['ID'] + 'mp3'
+# give this man a bells https://www.r-bloggers.com/looping-through-files/
+
+train_files.names = get_mp3_file_names(train_path)
+
+for (file in train_files.names) {
+  str(file)
+}
+
+# gets a list of all the mp3 files in the path
+get_mp3_file_names = function(file_path)
+{
+  # only get mp3 files, don't care about the rest
+  return(dir(file_path, pattern = ".mp3"))
+}
 
 # Although this is not strictly necessary, I just need to
 #process each file in those directories. Might as well do that in a loop
@@ -36,9 +47,11 @@ birds = birds[-1]
 
 
 # Extract something useful for our model
+# If I go the spectrogram route, I should use av not tuneR
 
 
 
+# Dude uses CNN can try that
 # Fit classifier to Training set
 
 
