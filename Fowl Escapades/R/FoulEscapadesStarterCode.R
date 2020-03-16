@@ -28,12 +28,6 @@ birds = birds[-1]
 # Add file names to the dataframes
 # give this man a bells https://www.r-bloggers.com/looping-through-files/
 
-train_files.names = get_mp3_file_names(train_path)
-
-for (file in train_files.names) {
-  str(file)
-}
-
 # gets a list of all the mp3 files in the path
 get_mp3_file_names = function(file_path)
 {
@@ -41,8 +35,11 @@ get_mp3_file_names = function(file_path)
   return(dir(file_path, pattern = ".mp3"))
 }
 
-# Although this is not strictly necessary, I just need to
-#process each file in those directories. Might as well do that in a loop
+train_path = "./data/Train/"
+train_files.names = get_mp3_file_names(train_path)
+
+test_path = "./data/Test/"
+test_files.names = get_mp3_file_names(test_path)
 
 
 

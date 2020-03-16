@@ -5,7 +5,7 @@
 
 install.packages("tuneR")
 library(tuneR)
-library(signal)
+#library(signal)
 
 #~\Documents\Python\GithubProjects\Zindi\Fowl Escapades\R
 
@@ -65,10 +65,10 @@ plot(spg)
 # don't do this. it needs 12 Gb. Ewps
 # mofo = melfcc(content, content@samp.rate, wintime=3.00)
 
-mofo = melfcc(content, content@samp.rate, wintime=0.03)
-summary(mofo)
+mofo = melfcc(content, content@samp.rate, wintime=0.5)
+#summary(mofo)
 
-plot(mofo, type='l')
+plot(mofo, type ='l')
 
 # store the extracted features so I can just load this in future
 
